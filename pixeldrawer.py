@@ -57,6 +57,7 @@ class PixelDrawer(DrawingInterface):
                     
                     try:
                         rpp, gpp, bpp = self.init_image.getpixel((c, r))
+                        
                     except Exception as s:
                         raise Exception(str((c, r)))
 
