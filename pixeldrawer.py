@@ -23,7 +23,6 @@ class PixelDrawer(DrawingInterface):
     init_image = None
 
     def __init__(self, width, height, do_mono, shape=None, scale=None, init_image=None):
-        print(shape)
         super(DrawingInterface, self).__init__()
         self.init_image = init_image
         self.canvas_width = width
@@ -49,11 +48,6 @@ class PixelDrawer(DrawingInterface):
         shape_groups = []
         colors = []
 
-        print(num_rows)
-        print(num_cols)
-        print("_)__")
-        print(self.init_image.size)
-
         if self.init_image:
             # Initialize Image Pixels
             for r in range(num_rows):
@@ -61,7 +55,7 @@ class PixelDrawer(DrawingInterface):
                 for c in range(num_cols):
                     cur_x = c * cell_width
                     
-                    rpp, gpp, bpp = self.init_image.getpixel((r, c))
+                    rpp, gpp, bpp = self.init_image.getpixel((c, r))
                     cell_color = torch.tensor([rpp / 255, gpp / 255, bpp / 255, 1.0])
 
                     colors.append(cell_color)
