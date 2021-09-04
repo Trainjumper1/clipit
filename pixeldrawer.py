@@ -23,6 +23,7 @@ class PixelDrawer(DrawingInterface):
     init_image = None
 
     def __init__(self, width, height, do_mono, shape=None, scale=None, init_image=None):
+        print(shape)
         super(DrawingInterface, self).__init__()
         self.init_image = init_image
         self.canvas_width = width
@@ -47,6 +48,11 @@ class PixelDrawer(DrawingInterface):
         shapes = []
         shape_groups = []
         colors = []
+
+        print(num_rows)
+        print(num_cols)
+        print("_)__")
+        print(self.init_image.size)
 
         if self.init_image:
             # Initialize Image Pixels
