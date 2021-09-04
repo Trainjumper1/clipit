@@ -55,12 +55,8 @@ class PixelDrawer(DrawingInterface):
                 for c in range(num_cols):
                     cur_x = c * cell_width
                     
-                    try:
-                        rpp, gpp, bpp = self.init_image.getpixel((c, r))
-                        
-                    except Exception as s:
-                        raise Exception(str((c, r)))
-
+                    rpp, gpp, bpp = self.init_image.getpixel((c, r))
+                    
                     cell_color = torch.tensor([rpp / 255, gpp / 255, bpp / 255, 1.0])
 
                     colors.append(cell_color)
