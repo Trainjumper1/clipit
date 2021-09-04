@@ -20,10 +20,11 @@ class PixelDrawer(DrawingInterface):
     num_cols = 80
     do_mono = False
     pixels = []
+    init_image = None
 
-    def __init__(self, width, height, do_mono, shape=None, scale=None):
+    def __init__(self, width, height, do_mono, shape=None, scale=None, init_image=None):
         super(DrawingInterface, self).__init__()
-
+        self.init_image = init_image
         self.canvas_width = width
         self.canvas_height = height
         self.do_mono = do_mono
@@ -47,26 +48,45 @@ class PixelDrawer(DrawingInterface):
         cell_width = canvas_width / num_cols
         cell_height = canvas_height / num_rows
 
-        # Initialize Random Pixels
         shapes = []
         shape_groups = []
         colors = []
-        for r in range(num_rows):
-            cur_y = r * cell_height
-            for c in range(num_cols):
-                cur_x = c * cell_width
-                if self.do_mono:
-                    mono_color = random.random()
-                    cell_color = torch.tensor([mono_color, mono_color, mono_color, 1.0])
-                else:
-                    cell_color = torch.tensor([random.random(), random.random(), random.random(), 1.0])
-                colors.append(cell_color)
-                p0 = [cur_x, cur_y]
-                p1 = [cur_x+cell_width, cur_y+cell_height]
-                path = pydiffvg.Rect(p_min=torch.tensor(p0), p_max=torch.tensor(p1))
-                shapes.append(path)
-                path_group = pydiffvg.ShapeGroup(shape_ids = torch.tensor([len(shapes) - 1]), stroke_color = None, fill_color = cell_color)
-                shape_groups.append(path_group)
+
+        if self.init_image:
+            # Initialize Image Pixels
+            for r in range(num_rows):
+                cur_y = r * cell_height
+                for c in range(num_cols):
+                    cur_x = c * cell_width
+                    
+                    rpp, gpp, bpp = self.init_image.getpixel((r, c))
+                    cell_color = torch.tensor([rpp / 255, gpp / 255, bpp / 255, 1.0])
+
+                    colors.append(cell_color)
+                    p0 = [cur_x, cur_y]
+                    p1 = [cur_x+cell_width, cur_y+cell_height]
+                    path = pydiffvg.Rect(p_min=torch.tensor(p0), p_max=torch.tensor(p1))
+                    shapes.append(path)
+                    path_group = pydiffvg.ShapeGroup(shape_ids = torch.tensor([len(shapes) - 1]), stroke_color = None, fill_color = cell_color)
+                    shape_groups.append(path_group)
+        else:
+            # Initialize Random Pixels
+            for r in range(num_rows):
+                cur_y = r * cell_height
+                for c in range(num_cols):
+                    cur_x = c * cell_width
+                    if self.do_mono:
+                        mono_color = random.random()
+                        cell_color = torch.tensor([mono_color, mono_color, mono_color, 1.0])
+                    else:
+                        cell_color = torch.tensor([random.random(), random.random(), random.random(), 1.0])
+                    colors.append(cell_color)
+                    p0 = [cur_x, cur_y]
+                    p1 = [cur_x+cell_width, cur_y+cell_height]
+                    path = pydiffvg.Rect(p_min=torch.tensor(p0), p_max=torch.tensor(p1))
+                    shapes.append(path)
+                    path_group = pydiffvg.ShapeGroup(shape_ids = torch.tensor([len(shapes) - 1]), stroke_color = None, fill_color = cell_color)
+                    shape_groups.append(path_group)
 
         # Just some diffvg setup
         scene_args = pydiffvg.RenderFunction.serialize_scene(\

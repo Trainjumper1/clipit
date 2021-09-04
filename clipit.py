@@ -389,8 +389,19 @@ def do_init(args):
     if args.use_clipdraw:
         drawer = ClipDrawer(args.size[0], args.size[1], args.strokes)
     elif args.use_pixeldraw:
+        init_image = None
+
+        if args.init_image:
+            if 'http' in args.init_image:
+              init_image = Image.open(urlopen(args.init_image))
+            else:
+              init_image = Image.open(args.init_image)
+
+            init_image = init_image.convert('RGB')
+            init_image = init_image.resize(args.pixel_size, Image.LANCZOS)
+
         if args.pixel_size is not None:
-            drawer = PixelDrawer(args.size[0], args.size[1], args.do_mono, args.pixel_size, scale=args.pixel_scale)
+            drawer = PixelDrawer(args.size[0], args.size[1], args.do_mono, args.pixel_size, scale=args.pixel_scale, init_image=init_image)
         elif global_aspect_width == 1:
             drawer = PixelDrawer(args.size[0], args.size[1], args.do_mono, [40, 40], scale=args.pixel_scale)
         else:
