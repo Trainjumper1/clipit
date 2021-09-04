@@ -400,8 +400,6 @@ def do_init(args):
             init_image = init_image.convert('RGB')
             init_image = init_image.resize(args.pixel_size, Image.LANCZOS)
 
-            print(init_image.size)
-
         if args.pixel_size is not None:
             drawer = PixelDrawer(args.size[0], args.size[1], args.do_mono, args.pixel_size, scale=args.pixel_scale, init_image=init_image)
         elif global_aspect_width == 1:
