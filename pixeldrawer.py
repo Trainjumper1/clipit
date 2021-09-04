@@ -28,12 +28,8 @@ class PixelDrawer(DrawingInterface):
         self.canvas_width = width
         self.canvas_height = height
         self.do_mono = do_mono
-        if shape is not None:
-            self.num_cols, self.num_rows = shape
-        if scale is not None and scale > 0:
-            self.num_cols = int(self.num_cols / scale)
-            self.num_rows = int(self.num_rows / scale)
-
+        
+        self.num_cols, self.num_rows = shape
 
     def load_model(self, config_path, checkpoint_path, device):
         # gamma = 1.0
