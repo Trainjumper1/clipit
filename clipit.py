@@ -592,7 +592,7 @@ def do_init(args):
         pMs.append(Prompt(embed, weight).to(device))
 
     opts = drawer.get_opts()
-    scheduler = ExponentialLR(opts, gamma=args.gamma)
+    scheduler = ExponentialLR(opts[0], gamma=args.gamma)
 
     if opts == None:
         # legacy
