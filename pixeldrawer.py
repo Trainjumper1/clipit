@@ -22,8 +22,9 @@ class PixelDrawer(DrawingInterface):
     pixels = []
     init_image = None
 
-    def __init__(self, width, height, do_mono, shape=None, scale=None, init_image=None):
+    def __init__(self, lr, width, height, do_mono, shape=None, scale=None, init_image=None):
         super(DrawingInterface, self).__init__()
+        self.lr = lr
         self.init_image = init_image
         self.canvas_width = width
         self.canvas_height = height
@@ -56,7 +57,7 @@ class PixelDrawer(DrawingInterface):
                     cur_x = c * cell_width
                     
                     rpp, gpp, bpp = self.init_image.getpixel((c, r))
-                    
+
                     cell_color = torch.tensor([rpp / 255, gpp / 255, bpp / 255, 1.0])
 
                     colors.append(cell_color)
@@ -99,7 +100,7 @@ class PixelDrawer(DrawingInterface):
         # Optimizers
         # points_optim = torch.optim.Adam(points_vars, lr=1.0)
         # width_optim = torch.optim.Adam(stroke_width_vars, lr=0.1)
-        color_optim = torch.optim.Adam(color_vars, lr=0.02)
+        color_optim = torch.optim.Adam(color_vars, lr=self.lr)
 
         self.img = img
         self.shapes = shapes 

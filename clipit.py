@@ -400,12 +400,7 @@ def do_init(args):
             init_image = init_image.convert('RGB')
             init_image = init_image.resize(args.pixel_size, Image.LANCZOS)
 
-        if args.pixel_size is not None:
-            drawer = PixelDrawer(args.size[0], args.size[1], args.do_mono, args.pixel_size, scale=args.pixel_scale, init_image=init_image)
-        elif global_aspect_width == 1:
-            drawer = PixelDrawer(args.size[0], args.size[1], args.do_mono, [40, 40], scale=args.pixel_scale)
-        else:
-            drawer = PixelDrawer(args.size[0], args.size[1], args.do_mono, scale=args.pixel_scale)
+        drawer = PixelDrawer(args.learning_rate, args.size[0], args.size[1], args.do_mono, args.pixel_size, scale=args.pixel_scale, init_image=init_image)
     else:
         drawer = VqganDrawer(args.vqgan_model)
     drawer.load_model(args.vqgan_config, args.vqgan_checkpoint, device)
