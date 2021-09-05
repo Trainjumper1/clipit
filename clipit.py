@@ -398,7 +398,7 @@ def do_init(args):
               init_image = Image.open(args.init_image)
 
             init_image = init_image.convert('RGB')
-            init_image = init_image.resize(args.pixel_size, Image.LANCZOS)
+            init_image = init_image.resize(args.pixel_size, Image.NEAREST)
 
         drawer = PixelDrawer(args.learning_rate, args.size[0], args.size[1], args.do_mono, args.pixel_size, scale=args.pixel_scale, init_image=init_image)
     else:
