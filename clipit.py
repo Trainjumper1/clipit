@@ -398,8 +398,11 @@ def do_init(args):
               init_image = Image.open(args.init_image)
 
             init_image = init_image.convert('RGB')
-            init_image = init_image.resize(args.pixel_size, Image.NEAREST)
-
+            if args.use_nearest:
+                init_image = init_image.resize(args.pixel_size, Image.NEAREST)
+            else:
+                init_image = init_image.resize(args.pixel_size, Image.LANCZOS)
+                
         drawer = PixelDrawer(args.learning_rate, args.size[0], args.size[1], args.do_mono, args.pixel_size, scale=args.pixel_scale, init_image=init_image)
     else:
         drawer = VqganDrawer(args.vqgan_model)
@@ -1111,6 +1114,7 @@ def setup_parser():
     vq_parser.add_argument("-vid",  "--video", type=bool, help="Create video frames?", default=False, dest='make_video')
     vq_parser.add_argument("-d",    "--deterministic", type=bool, help="Enable cudnn.deterministic?", default=False, dest='cudnn_determinism')
     vq_parser.add_argument("-cd",   "--use_clipdraw", type=bool, help="Use clipdraw", default=False, dest='use_clipdraw')
+    vq_parser.add_argument("-un",   "--use_nearest", type=bool, help="Use nearest", default=False, dest='use_nearest')
     vq_parser.add_argument("-st",   "--strokes", type=int, help="clipdraw strokes", default=1024, dest='strokes')
     vq_parser.add_argument("-pd",   "--use_pixeldraw", type=bool, help="Use pixeldraw", default=False, dest='use_pixeldraw')
     vq_parser.add_argument("-mo",   "--do_mono", type=bool, help="Monochromatic", default=False, dest='do_mono')
