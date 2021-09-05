@@ -15,6 +15,7 @@ from omegaconf import OmegaConf
 
 import torch
 from torch import nn, optim
+from torch.optim.lr_scheduler import ExponentialLR
 from torch.nn import functional as F
 from torchvision import transforms
 from torchvision.transforms import functional as TF
@@ -377,7 +378,7 @@ def resize_image(image, out_size):
     return image.resize(size, Image.LANCZOS)
 
 def do_init(args):
-    global opts, perceptors, normalize, cutoutsTable, cutoutSizeTable
+    global opts, perceptors, normalize, cutoutsTable, cutoutSizeTable, scheduler
     global z_orig, z_targets, z_labels, init_image_tensor, target_image_tensor
     global gside_X, gside_Y, overlay_image_rgba
     global pmsTable, pmsImageTable, pImages, device, spotPmsTable, spotOffPmsTable
@@ -591,6 +592,8 @@ def do_init(args):
         pMs.append(Prompt(embed, weight).to(device))
 
     opts = drawer.get_opts()
+    scheduler = ExponentialLR(opts, gamma=args.gamma)
+
     if opts == None:
         # legacy
 
@@ -644,6 +647,7 @@ z_orig = None
 z_targets = None
 z_labels = None
 opts = None
+scheduler = None
 drawer = None
 perceptors = {}
 normalize = None
@@ -925,6 +929,8 @@ def train(args, cur_it):
 
     drawer.clip_z()    
 
+    scheduler.step()
+
 imagenet_templates = [
     "itap of a {}.",
     "a bad photo of the {}.",
@@ -1123,6 +1129,7 @@ def setup_parser():
     vq_parser.add_argument("-esw",  "--enforce_smoothness", type=int, help="enforce smoothness, 0 -- skip", default=0, dest='enforce_smoothness')
     vq_parser.add_argument("-est",  "--enforce_smoothness_type", type=str, help="enforce smoothness type: default/clipped/log", default='default', dest='enforce_smoothness_type')
     vq_parser.add_argument("-ecw",  "--enforce_saturation", type=int, help="enforce saturation, 0 -- skip", default=0, dest='enforce_saturation')
+    vq_parser.add_argument("-gam",  "--gamma", type=float, help="gamma", default=1.0, dest='gamma')
 
     return vq_parser
 
