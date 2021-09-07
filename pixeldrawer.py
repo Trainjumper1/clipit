@@ -59,7 +59,7 @@ class PixelDrawer(DrawingInterface):
         return 5
 
     def synth(self, cur_iteration):
-        return self.current
+        return self.current.unsqueeze(0)
 
     @torch.no_grad()
     def to_image(self):
