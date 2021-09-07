@@ -1314,17 +1314,14 @@ def process_args(vq_parser, namespace=None):
         'widescreen': [200, 112]
     }
 
+    args.size = (args.pixel_size[0] * args.scale, args.pixel_size[1] * args.scale)
+
     if args.size is not None:
         global_aspect_width = args.size[0] / args.size[1]
     elif args.aspect == "widescreen":
         global_aspect_width = 16/9
     else:
         global_aspect_width = 1
-
-    # determine size if not set
-    if args.size is None:
-        print("aspect not understood, aborting -> ", args.aspect)
-        exit(1)
 
     if args.init_noise.lower() == "none":
         args.init_noise = None
