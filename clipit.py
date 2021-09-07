@@ -1278,8 +1278,8 @@ def process_args(vq_parser, namespace=None):
         'better': 3,
         'best': 4
     }
-    this should be replaced with logic that does somethings
-    smart based on available memory (eg: size, num_models, etc)
+    # this should be replaced with logic that does somethings
+    # smart based on available memory (eg: size, num_models, etc)
     quality_to_num_cuts_table = {
         'draft': 40,
         'normal': 40,
