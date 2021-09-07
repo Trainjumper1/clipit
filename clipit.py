@@ -218,7 +218,9 @@ class MyRandomPerspective(K.RandomPerspective):
     def apply_transform(
         self, input: torch.Tensor, params: Dict[str, torch.Tensor], transform: Optional[torch.Tensor] = None
     ) -> torch.Tensor:
-        _, _, height, width = input.shape
+
+        width, height = input.size
+
         transform = cast(torch.Tensor, transform)
         return kornia.geometry.warp_perspective(
             input, transform, (height, width),
