@@ -1266,20 +1266,20 @@ def process_args(vq_parser, namespace=None):
         'draft': 'ViT-B/16',
         'normal': 'ViT-B/32',
     }
-    # quality_to_iterations_table = {
-    #     'draft': 200,
-    #     'normal': 350,
-    #     'better': 500,
-    #     'best': 500
-    # }
-    # quality_to_scale_table = {
-    #     'draft': 1,
-    #     'normal': 2,
-    #     'better': 3,
-    #     'best': 4
-    # }
-    # this should be replaced with logic that does somethings
-    # smart based on available memory (eg: size, num_models, etc)
+    quality_to_iterations_table = {
+        'draft': 200,
+        'normal': 350,
+        'better': 500,
+        'best': 500
+    }
+    quality_to_scale_table = {
+        'draft': 1,
+        'normal': 2,
+        'better': 3,
+        'best': 4
+    }
+    this should be replaced with logic that does somethings
+    smart based on available memory (eg: size, num_models, etc)
     quality_to_num_cuts_table = {
         'draft': 40,
         'normal': 40,
