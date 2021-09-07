@@ -22,11 +22,11 @@ class PixelDrawer(DrawingInterface):
     pixels = []
     init_image = None
 
-    def __init__(self, lr, size, scale, init_image=None):
+    def __init__(self, lr, pixel_size, scale, init_image=None):
         super(DrawingInterface, self).__init__()
         self.lr = lr
         self.init_image = init_image
-        self.size = size
+        self.pixel_size = pixel_size
         self.scale = scale
 
     def load_model(self, config_path, checkpoint_path, device):
@@ -34,7 +34,7 @@ class PixelDrawer(DrawingInterface):
             self.current = to_tensor(self.init_image).cuda()
 
         else:
-            self.current = torch.rand(3, self.size[1], self.size[0]).cuda()
+            self.current = torch.rand(3, self.pixel_size[1], self.pixel_size[0]).cuda()
 
         self.current.requires_grad = True
 
@@ -59,7 +59,11 @@ class PixelDrawer(DrawingInterface):
         return 5
 
     def synth(self, cur_iteration):
-        return self.current.unsqueeze(0)
+        return torch.nn.functional.interpolate(
+            self.current.unsqueeze(0), 
+            (1, 3, self.size[1] * self.scale, self.size[0] * self.scale), 
+            mode='nearest'
+        )
 
     @torch.no_grad()
     def to_image(self):
