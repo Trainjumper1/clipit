@@ -690,7 +690,7 @@ def make_gif(args, iter):
 #   -i '{animation_output}/*_*.png' \
 #   -loop 0 {animation_output}/final.gif
 
-def display_img(self, tensor):
+def display_img(tensor):
     with torch.no_grad():
         pil_image = to_img(tensor.cpu())
         pil_image.save("outer.png")
@@ -773,7 +773,7 @@ def ascend_txt(args):
         #
         cur_cutouts[cutoutSize] 
         #
-        
+
         if (cur_iteration%10== 0):
             display_img(cur_cutouts[cutoutSize][0])
 
