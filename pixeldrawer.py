@@ -28,6 +28,7 @@ class PixelDrawer(DrawingInterface):
         self.init_image = init_image
         self.size = size
         self.scale = scale
+        self.shape = self.size
 
     def load_model(self, config_path, checkpoint_path, device):
         if self.init_image:
