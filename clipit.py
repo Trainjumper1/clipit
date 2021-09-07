@@ -1269,9 +1269,13 @@ def process_args(vq_parser, namespace=None):
        torch.backends.cudnn.deterministic = True
 
     quality_to_clip_models_table = {
-        'draft': 'ViT-B/16',
-        'normal': 'ViT-B/32',
+        'draft': 'ViT-B/32',
+        'draft2': 'ViT-B/16',
+        'normal': 'ViT-B/32,ViT-B/16',
+        'better': 'RN50,ViT-B/32,ViT-B/16',
+        'best': 'RN50x4,ViT-B/32,ViT-B/16',
     }
+
     quality_to_iterations_table = {
         'draft': 200,
         'normal': 350,
