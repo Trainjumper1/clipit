@@ -690,12 +690,6 @@ def make_gif(args, iter):
 #   -i '{animation_output}/*_*.png' \
 #   -loop 0 {animation_output}/final.gif
 
-def display_img(tensor):
-    with torch.no_grad():
-        pil_image = to_img(tensor.cpu())
-        pil_image.save("outer.png")
-        display.display(display.Image("outer.png"))
-
 @torch.no_grad()
 def checkin(args, iter, losses):
     global drawer
