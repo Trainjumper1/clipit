@@ -16,8 +16,6 @@ from torch.nn.functional import interpolate
 to_tensor = transforms.ToTensor()
 to_img = transforms.ToPILImage()
 
-INTERNAL_SCALE = 3
-
 class PixelDrawer(DrawingInterface):
     num_rows = 45
     num_cols = 80
@@ -67,11 +65,8 @@ class PixelDrawer(DrawingInterface):
 
     @torch.no_grad()
     def to_image(self):
-        return to_img(self.current).resize(
-            self.scaled,
-             PIL.Image.NEAREST
-        )
-
+        return to_img(interpolate(self.current, size=self.scaled, mode='nearest'))
+        
     def clip_z(self):
         with torch.no_grad():
             self.current.clamp_(0.0, 1.0)
