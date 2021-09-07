@@ -669,6 +669,8 @@ anim_output_files=[]
 anim_cur_zs=[]
 anim_next_zs=[]
 
+to_img = transforms.ToPILImage()
+
 def make_gif(args, iter):
     gif_output = os.path.join(args.animation_dir, "anim.gif")
     if os.path.exists(gif_output):
@@ -687,6 +689,12 @@ def make_gif(args, iter):
 #   -framerate 10 -pattern_type glob \
 #   -i '{animation_output}/*_*.png' \
 #   -loop 0 {animation_output}/final.gif
+
+def display_img(self, tensor):
+    with torch.no_grad():
+        pil_image = to_img(tensor.cpu())
+        pil_image.save("outer.png")
+        display.display(display.Image("outer.png"))
 
 @torch.no_grad()
 def checkin(args, iter, losses):
@@ -761,6 +769,14 @@ def ascend_txt(args):
                 result.append(prompt(iii_so))
 
         pMs = pmsTable[clip_model]
+
+        #
+        cur_cutouts[cutoutSize] 
+        #
+        
+        if (cur_iteration%10== 0):
+            display_img(cur_cutouts[cutoutSize][0])
+
         iii = perceptor.encode_image(normalize( cur_cutouts[cutoutSize] )).float()
         for prompt in pMs:
             result.append(prompt(iii))
