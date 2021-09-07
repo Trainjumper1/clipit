@@ -768,8 +768,8 @@ def ascend_txt(args):
         cur_cutouts[cutoutSize] 
         #
 
-        if (cur_iteration%10== 0):
-            display_img(cur_cutouts[cutoutSize][0])
+        # if (cur_iteration%10== 0):
+        #     display_img(cur_cutouts[cutoutSize][0])
 
         iii = perceptor.encode_image(normalize( cur_cutouts[cutoutSize] )).float()
         for prompt in pMs:
