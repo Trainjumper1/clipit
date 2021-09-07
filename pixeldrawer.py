@@ -11,7 +11,6 @@ import torchvision
 import torchvision.transforms as transforms
 import numpy as np
 import PIL.Image
-from torch.nn.functional import interpolate
 
 to_tensor = transforms.ToTensor()
 to_img = transforms.ToPILImage()
@@ -23,20 +22,19 @@ class PixelDrawer(DrawingInterface):
     pixels = []
     init_image = None
 
-    def __init__(self, lr, size, pixel_size, scale, init_image=None):
+    def __init__(self, lr, size, scale, init_image=None):
         super(DrawingInterface, self).__init__()
         self.lr = lr
         self.init_image = init_image
         self.size = size
-        self.pixel_size = pixel_size
-        self.scaled = (self.size[0] * scale, self.size[1] * scale)
+        self.scale = scale
 
     def load_model(self, config_path, checkpoint_path, device):
         if self.init_image:
             self.current = to_tensor(self.init_image.cuda())
 
         else:
-            self.current = torch.rand(3, self.pixel_size[1], self.pixel_size[0]).cuda()
+            self.current = torch.rand(3, self.size[1], self.size[0]).cuda()
 
         self.current.requires_grad = True
 
@@ -61,11 +59,14 @@ class PixelDrawer(DrawingInterface):
         return 5
 
     def synth(self, cur_iteration):
-        return interpolate(self.current, size=self.size, mode='nearest').unsqueeze(0)
+        return self.current.unsqueeze(0)
 
     @torch.no_grad()
     def to_image(self):
-        return to_img(interpolate(self.current, size=self.scaled, mode='nearest'))
+        return to_img(self.current).resize(
+            (self.size[0] * self.scale, self.size[1] * self.scale),
+             PIL.Image.NEAREST
+        )
 
     def clip_z(self):
         with torch.no_grad():

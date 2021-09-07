@@ -397,11 +397,11 @@ def do_init(args):
 
         init_image = init_image.convert('RGB')
         if args.use_nearest:
-            init_image = init_image.resize(args.pixel_size, Image.NEAREST)
+            init_image = init_image.resize(args.size, Image.NEAREST)
         else:
-            init_image = init_image.resize(args.pixel_size, Image.LANCZOS)
+            init_image = init_image.resize(args.size, Image.LANCZOS)
             
-    drawer = PixelDrawer(args.learning_rate, args.size, args.pixel_size, init_image=init_image, scale=args.scale)
+    drawer = PixelDrawer(args.learning_rate, args.size, init_image=init_image, scale=args.scale)
 
     drawer.load_model(args.vqgan_config, args.vqgan_checkpoint, device)
     num_resolutions = drawer.get_num_resolutions()
