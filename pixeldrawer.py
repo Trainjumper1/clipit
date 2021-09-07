@@ -37,8 +37,8 @@ class PixelDrawer(DrawingInterface):
             self.current = torch.rand(3, self.size[1], self.size[0]).cuda()
 
         self.current.requires_grad = True
-        color_optim = torch.optim.Adam(self.current, lr=self.lr)
-        self.opts = [color_optim]
+
+        self.opts = [torch.optim.Adam([self.current], lr=self.lr)]
 
     def get_opts(self):
         return self.opts
