@@ -64,7 +64,7 @@ class PixelDrawer(DrawingInterface):
     @torch.no_grad()
     def to_image(self):
         return to_img(self.current).resize(
-            (self.width * self.scale, self.height * self.scale),
+            (self.size[0] * self.scale, self.size[1] * self.scale),
              PIL.Image.NEAREST
         )
 
