@@ -11,9 +11,12 @@ import torchvision
 import torchvision.transforms as transforms
 import numpy as np
 import PIL.Image
+from torch.nn.functional import interpolate
 
 to_tensor = transforms.ToTensor()
 to_img = transforms.ToPILImage()
+
+INTERNAL_SCALE = 3
 
 class PixelDrawer(DrawingInterface):
     num_rows = 45
@@ -28,6 +31,7 @@ class PixelDrawer(DrawingInterface):
         self.init_image = init_image
         self.size = size
         self.scale = scale
+        self.scaled = (self.size[0] * self.scale, self.size[1] * self.scale)
 
     def load_model(self, config_path, checkpoint_path, device):
         if self.init_image:
@@ -59,12 +63,12 @@ class PixelDrawer(DrawingInterface):
         return 5
 
     def synth(self, cur_iteration):
-        return self.current.unsqueeze(0)
+        return interpolate(self.current, size=self.scaled, mode='nearest').unsqueeze(0)
 
     @torch.no_grad()
     def to_image(self):
         return to_img(self.current).resize(
-            (self.size[0] * self.scale, self.size[1] * self.scale),
+            self.scaled,
              PIL.Image.NEAREST
         )
 
