@@ -1,167 +1,177 @@
-import numpy as np
+from DrawingInterface import DrawingInterface
+
+import pydiffvg
 import torch
-import torch.nn as nn
-from torch.nn import functional as F
-from IPython import display
-from PIL import Image
-from CLIP import clip
-from torchvision import transforms
-from tqdm.notebook import tqdm
-from torchvision.transforms import InterpolationMode as im
-import kornia
-import kornia.augmentation as K
-from typing import cast, Dict, List, Optional, Tuple, Union
+import skimage
+import skimage.io
+import random
+import ttools.modules
+import argparse
+import math
+import torchvision
+import torchvision.transforms as transforms
+import numpy as np
+import PIL.Image
 
-to_img = transforms.ToPILImage()
-to_tensor = transforms.ToTensor()
+pydiffvg.set_print_timing(False)
 
-normalize = transforms.Normalize(mean=[0.48145466, 0.4578275, 0.40821073],
-                                 std=[0.26862954, 0.26130258, 0.27577711])
+class PixelDrawer(DrawingInterface):
+    num_rows = 45
+    num_cols = 80
+    do_mono = False
+    pixels = []
+    init_image = None
 
-device = torch.device("cuda")
-
-AUGMENT_COUNT = 40
-NOISE_FAC = 0.05
-
-class MyRandomPerspective(K.RandomPerspective):
-    def apply_transform(
-        self, input: torch.Tensor, params: Dict[str, torch.Tensor], transform: Optional[torch.Tensor] = None
-    ) -> torch.Tensor:
-        _, _, height, width = input.shape
-        transform = cast(torch.Tensor, transform)
-        return kornia.geometry.warp_perspective(
-            input, transform, (height, width),
-             mode=self.resample.name.lower(), align_corners=self.align_corners, padding_mode="border"
-        )
-
-class PixelDrawer:
-    size = 100
-    scale = 3
-
-    def init(self):
-        self.width = self.size
-        self.height = self.size
-
-        self.current = torch.rand(3, self.width, self.height).cuda()
-        # pil_img = Image.open("lake.webp").convert('RGB').resize((self.size, self.size), Image.NEAREST)
-        # self.current = to_tensor(pil_img).cuda()
-        self.current.requires_grad = True
-
-        self.prompt = "medieval city on fire landscape #pixelart"
-                    
-        self.clip_model, _ = clip.load("ViT-B/32", device=device)
-
-        self.vsize = self.clip_model.visual.input_resolution
-
-        prompt_in = clip.tokenize(self.prompt).to(device)
-
-        with torch.no_grad():
-            self.prompt_features = self.clip_model.encode_text(prompt_in)
-
-        self.optimizer = torch.optim.Adam([self.current], lr=0.01)
-
-        # self.zoom_augment = transforms.Compose([
-        #   transforms.ColorJitter(hue=0.1, saturation=0.15, brightness=0.05, contrast=0.05),
-
-        #   transforms.Resize(self.clip_model.visual.input_resolution),
-
-        #   transforms.RandomApply([transforms.RandomResizedCrop(
-        #       self.clip_model.visual.input_resolution,
-        #       scale = (0.1, 0.4),
-        #       ratio = (0.85, 1.17),
-        #       interpolation = im.NEAREST
-        #   )], p=0.9),
-
-        #   transforms.RandomPerspective(
-        #       distortion_scale=0.5, 
-        #       p=0.7,
-        #   ),
-        # ])
-
-        # n_s = 0.9
-        # n_t = (1-n_s)/2
-
-        # self.wide_augment = transforms.Compose([
-        #     transforms.ColorJitter(hue=0.1, saturation=0.15, brightness=0.05, contrast=0.05),
-
-        #     transforms.Resize(self.clip_model.visual.input_resolution),
-
-        #     transforms.RandomAffine(
-        #         degrees=0,
-        #         translate=(n_t, n_t), 
-        #         scale=(n_s, n_s),
-        #     ),
-
-        #     transforms.RandomPerspective(
-        #         distortion_scale=0.2, 
-        #         p=0.7,
-        #     ),
-        # ])
-
-        augmentations = []
-        augmentations.append(MyRandomPerspective(distortion_scale=0.40, p=0.7, return_transform=True))
-        augmentations.append(K.RandomResizedCrop(size=(self.vsize,self.vsize), scale=(0.1,0.75),  ratio=(0.85,1.2), cropping_mode='resample', p=0.7, return_transform=True))
-        augmentations.append(K.ColorJitter(hue=0.1, saturation=0.1, p=0.8, return_transform=True))
-        self.zoom_augment = nn.Sequential(*augmentations)
-
-        augmentations = []
-
-        n_s = 0.95
-        n_t = (1-n_s)/2
-        augmentations.append(K.RandomAffine(degrees=0, translate=(n_t, n_t), scale=(n_s, n_s), p=1.0, return_transform=True))
-
-        # augmentations.append(K.CenterCrop(size=(self.self.vsize,self.self.vsize), p=1.0, cropping_mode="resample", return_transform=True))
-        augmentations.append(K.CenterCrop(size=self.vsize, cropping_mode='resample', p=1.0, return_transform=True))
-        augmentations.append(K.RandomPerspective(distortion_scale=0.20, p=0.7, return_transform=True))
-        augmentations.append(K.ColorJitter(hue=0.1, saturation=0.1, p=0.8, return_transform=True))
-        self.wide_augment = nn.Sequential(*augmentations)
-
-
-    def run(self):
-        for i in tqdm(range(5000)):
-            self.optimizer.zero_grad()
-
-            batch1 = self.current.unsqueeze(0).expand(AUGMENT_COUNT, 3, self.width, self.height)
-            batch1, _ = self.wide_augment(transforms.Resize(self.vsize)(batch1))
-
-            batch2 = self.current.unsqueeze(0).expand(AUGMENT_COUNT, 3, self.width, self.height)
-            batch2, _ = self.wide_augment(transforms.Resize(self.vsize)(batch2))
-
-            batch = torch.cat((normalize(batch1), normalize(batch2)))
-
-            # with torch.no_grad():
-            #   facs = batch.new_empty([AUGMENT_COUNT * 2, 1, 1, 1]).uniform_(-NOISE_FAC, NOISE_FAC)
-            
-            # batch = batch + facs * torch.randn_like(batch)
-
-            image_features = self.clip_model.encode_image(batch)
-
-            cos = nn.CosineSimilarity(dim=1)
-            loss = -torch.sum(cos(image_features, self.prompt_features))
-
-            img_normed = F.normalize(image_features.unsqueeze(1), dim=2)
-            prompt_normed = F.normalize(self.prompt_features.unsqueeze(0), dim=2)
-            dists = img_normed.sub(prompt_normed).norm(dim=2).div(2).arcsin().pow(2).mul(2)
-            loss = dists.mean()
-            
-            if i % 20 == 0:
-                print("{}: {}".format(i, loss.item()))
-                self.display(self.current)
-
-            loss.backward()
-            self.optimizer.step()
-            
-            with torch.no_grad():
-                self.current.clamp_(0.0, 1.0)
+    def __init__(self, lr, width, height, do_mono, shape=None, scale=None, init_image=None):
+        super(DrawingInterface, self).__init__()
+        self.lr = lr
+        self.init_image = init_image
+        self.canvas_width = width
+        self.canvas_height = height
+        self.do_mono = do_mono
         
-    def display(self, tensor):
-      with torch.no_grad():
-        pil_image = to_img(tensor.cpu())
-        pil_image = pil_image.resize((self.width * self.scale, self.height * self.scale), Image.NEAREST)
-        pil_image.save("out.png")
-        display.display(display.Image("out.png"))
+        self.num_cols, self.num_rows = shape
 
-if __name__ == "__main__":
-    pd = PixelDrawer()
-    pd.init()
-    pd.run()
+    def load_model(self, config_path, checkpoint_path, device):
+        # gamma = 1.0
+
+        # Use GPU if available
+        pydiffvg.set_use_gpu(torch.cuda.is_available())
+        pydiffvg.set_device(device)
+        self.device = device
+
+        canvas_width, canvas_height = self.canvas_width, self.canvas_height
+        num_rows, num_cols = self.num_rows, self.num_cols
+        cell_width = canvas_width / num_cols
+        cell_height = canvas_height / num_rows
+
+        shapes = []
+        shape_groups = []
+        colors = []
+
+        if self.init_image:
+            # Initialize Image Pixels
+            for r in range(num_rows):
+                cur_y = r * cell_height
+                for c in range(num_cols):
+                    cur_x = c * cell_width
+                    
+                    rpp, gpp, bpp = self.init_image.getpixel((c, r))
+
+                    cell_color = torch.tensor([rpp / 255, gpp / 255, bpp / 255, 1.0])
+
+                    colors.append(cell_color)
+                    p0 = [cur_x, cur_y]
+                    p1 = [cur_x+cell_width, cur_y+cell_height]
+                    path = pydiffvg.Rect(p_min=torch.tensor(p0), p_max=torch.tensor(p1))
+                    shapes.append(path)
+                    path_group = pydiffvg.ShapeGroup(shape_ids = torch.tensor([len(shapes) - 1]), stroke_color = None, fill_color = cell_color)
+                    shape_groups.append(path_group)
+        else:
+            # Initialize Random Pixels
+            for r in range(num_rows):
+                cur_y = r * cell_height
+                for c in range(num_cols):
+                    cur_x = c * cell_width
+                    if self.do_mono:
+                        mono_color = random.random()
+                        cell_color = torch.tensor([mono_color, mono_color, mono_color, 1.0])
+                    else:
+                        cell_color = torch.tensor([random.random(), random.random(), random.random(), 1.0])
+                    colors.append(cell_color)
+                    p0 = [cur_x, cur_y]
+                    p1 = [cur_x+cell_width, cur_y+cell_height]
+                    path = pydiffvg.Rect(p_min=torch.tensor(p0), p_max=torch.tensor(p1))
+                    shapes.append(path)
+                    path_group = pydiffvg.ShapeGroup(shape_ids = torch.tensor([len(shapes) - 1]), stroke_color = None, fill_color = cell_color)
+                    shape_groups.append(path_group)
+
+        # Just some diffvg setup
+        scene_args = pydiffvg.RenderFunction.serialize_scene(\
+            canvas_width, canvas_height, shapes, shape_groups)
+        render = pydiffvg.RenderFunction.apply
+        img = render(canvas_width, canvas_height, 2, 2, 0, None, *scene_args)
+
+        color_vars = []
+        for group in shape_groups:
+            group.fill_color.requires_grad = True
+            color_vars.append(group.fill_color)
+
+        # Optimizers
+        # points_optim = torch.optim.Adam(points_vars, lr=1.0)
+        # width_optim = torch.optim.Adam(stroke_width_vars, lr=0.1)
+        color_optim = torch.optim.Adam(color_vars, lr=self.lr)
+
+        self.img = img
+        self.shapes = shapes 
+        self.shape_groups  = shape_groups
+        self.opts = [color_optim]
+
+    def get_opts(self):
+        return self.opts
+
+    def rand_init(self, toksX, toksY):
+        # TODO
+        pass
+
+    def init_from_tensor(self, init_tensor):
+        # TODO
+        pass
+
+    def reapply_from_tensor(self, new_tensor):
+        # TODO
+        pass
+
+    def get_z_from_tensor(self, ref_tensor):
+        return None
+
+    def get_num_resolutions(self):
+        # TODO
+        return 5
+
+    def synth(self, cur_iteration):
+        render = pydiffvg.RenderFunction.apply
+        scene_args = pydiffvg.RenderFunction.serialize_scene(\
+            self.canvas_width, self.canvas_height, self.shapes, self.shape_groups)
+        img = render(self.canvas_width, self.canvas_height, 2, 2, cur_iteration, None, *scene_args)
+        img = img[:, :, 3:4] * img[:, :, :3] + torch.ones(img.shape[0], img.shape[1], 3, device = self.device) * (1 - img[:, :, 3:4])
+        img = img[:, :, :3]
+        img = img.unsqueeze(0)
+        img = img.permute(0, 3, 1, 2) # NHWC -> NCHW
+        self.img = img
+        return img
+
+    @torch.no_grad()
+    def to_image(self):
+        img = self.img.detach().cpu().numpy()[0]
+        if self.do_mono:
+            img = img[1] # take the green channel (they should all be the same)
+            s = img.shape
+            # threshold is an approximate gaussian from [0,1]
+            random_bates = np.average(np.random.uniform(size=(5, s[0], s[1])), axis=0)
+            # pimg = PIL.Image.fromarray(np.uint8(random_bates*255), mode="L")
+            # pimg.save("bates_debug.png")
+            img = np.where(img > random_bates, 1, 0)
+            img = np.uint8(img * 255)
+            pimg = PIL.Image.fromarray(img, mode="L")
+        else:
+            img = np.transpose(img, (1, 2, 0))
+            img = np.clip(img, 0, 1)
+            img = np.uint8(img * 254)
+            pimg = PIL.Image.fromarray(img, mode="RGB")
+        return pimg
+
+    def clip_z(self):
+        with torch.no_grad():
+            for group in self.shape_groups:
+                group.fill_color.data[:3].clamp_(0.0, 1.0)
+                group.fill_color.data[3].clamp_(1.0, 1.0)
+                if self.do_mono:
+                    avg_amount = torch.mean(group.fill_color.data[:3])
+                    group.fill_color.data[:3] = avg_amount
+
+    def get_z(self):
+        return None
+
+    def get_z_copy(self):
+        return None
