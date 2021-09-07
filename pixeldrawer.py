@@ -31,7 +31,7 @@ class PixelDrawer(DrawingInterface):
 
     def load_model(self, config_path, checkpoint_path, device):
         if self.init_image:
-            self.current = to_tensor(self.init_image.cuda())
+            self.current = to_tensor(self.init_image).cuda()
 
         else:
             self.current = torch.rand(3, self.size[1], self.size[0]).cuda()
