@@ -387,26 +387,22 @@ def do_init(args):
     # Do it (init that is)
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
-    if args.use_clipdraw:
-        drawer = ClipDrawer(args.size[0], args.size[1], args.strokes)
-    elif args.use_pixeldraw:
-        init_image = None
+    init_image = None
 
-        if args.init_image:
-            if 'http' in args.init_image:
-              init_image = Image.open(urlopen(args.init_image))
-            else:
-              init_image = Image.open(args.init_image)
+    if args.init_image:
+        if 'http' in args.init_image:
+            init_image = Image.open(urlopen(args.init_image))
+        else:
+            init_image = Image.open(args.init_image)
 
-            init_image = init_image.convert('RGB')
-            if args.use_nearest:
-                init_image = init_image.resize(args.pixel_size, Image.NEAREST)
-            else:
-                init_image = init_image.resize(args.pixel_size, Image.LANCZOS)
-                
-        drawer = PixelDrawer(args.learning_rate, args.size[0], args.size[1], args.do_mono, args.pixel_size, scale=args.pixel_scale, init_image=init_image)
-    else:
-        drawer = VqganDrawer(args.vqgan_model)
+        init_image = init_image.convert('RGB')
+        if args.use_nearest:
+            init_image = init_image.resize(args.size, Image.NEAREST)
+        else:
+            init_image = init_image.resize(args.size, Image.LANCZOS)
+            
+    drawer = PixelDrawer(args.learning_rate, args.size, init_image=init_image, scale=args.scale)
+
     drawer.load_model(args.vqgan_config, args.vqgan_checkpoint, device)
     num_resolutions = drawer.get_num_resolutions()
     # print("-----------> NUMR ", num_resolutions)
@@ -1097,7 +1093,7 @@ def setup_parser():
     vq_parser.add_argument("-qua",  "--quality", type=str, help="draft, normal, best", default="normal", dest='quality')
     vq_parser.add_argument("-asp",  "--aspect", type=str, help="widescreen, square", default="widescreen", dest='aspect')
     vq_parser.add_argument("-ezs",  "--ezsize", type=str, help="small, medium, large", default=None, dest='ezsize')
-    vq_parser.add_argument("-sca",  "--scale", type=float, help="scale (instead of ezsize)", default=None, dest='scale')
+    vq_parser.add_argument("-sca",  "--scale", type=int, help="pixel scale", default=3, dest='scale')
     vq_parser.add_argument("-ova",  "--overlay_alpha", type=int, help="Overlay alpha (0-255)", default=None, dest='overlay_alpha')    
     vq_parser.add_argument("-s",    "--size", nargs=2, type=int, help="Image size (width height)", default=None, dest='size')
     vq_parser.add_argument("-ps",   "--pixel_size", nargs=2, type=int, help="Pixel size (width height)", default=None, dest='pixel_size')
@@ -1307,8 +1303,6 @@ def process_args(vq_parser, namespace=None):
         args.iterations = quality_to_iterations_table[args.quality]
     if args.num_cuts is None:
         args.num_cuts = quality_to_num_cuts_table[args.quality]
-    if args.ezsize is None and args.scale is None:
-        args.scale = quality_to_scale_table[args.quality]
 
     size_to_scale_table = {
         'small': 1,
@@ -1329,21 +1323,8 @@ def process_args(vq_parser, namespace=None):
 
     # determine size if not set
     if args.size is None:
-        size_scale = args.scale
-        if size_scale is None:
-            if args.ezsize in size_to_scale_table:
-                size_scale = size_to_scale_table[args.ezsize]
-            else:
-                print("EZ Size not understood, aborting -> ", args.ezsize)
-                exit(1)
-        if args.aspect in aspect_to_size_table:
-            base_size = aspect_to_size_table[args.aspect]
-            base_width = int(size_scale * base_size[0])
-            base_height = int(size_scale * base_size[1])
-            args.size = [base_width, base_height]
-        else:
-            print("aspect not understood, aborting -> ", args.aspect)
-            exit(1)
+        print("aspect not understood, aborting -> ", args.aspect)
+        exit(1)
 
     if args.init_noise.lower() == "none":
         args.init_noise = None
