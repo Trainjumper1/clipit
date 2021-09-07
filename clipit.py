@@ -401,7 +401,7 @@ def do_init(args):
         else:
             init_image = init_image.resize(args.pixel_size, Image.LANCZOS)
             
-    drawer = PixelDrawer(args.learning_rate, args.size, args.pixel_size, init_image=init_image)
+    drawer = PixelDrawer(args.learning_rate, args.size, args.pixel_size, init_image=init_image, scale=args.scale)
 
     drawer.load_model(args.vqgan_config, args.vqgan_checkpoint, device)
     num_resolutions = drawer.get_num_resolutions()
