@@ -61,7 +61,7 @@ class PixelDrawer(DrawingInterface):
     def synth(self, cur_iteration):
         return torch.nn.functional.interpolate(
             self.current.unsqueeze(0), 
-            (1, 3, self.pixel_size[1] * self.scale, self.pixel_size[0] * self.scale), 
+            size=(self.pixel_size[1] * self.scale, self.pixel_size[0] * self.scale), 
             mode='nearest'
         )
 
