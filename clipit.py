@@ -386,6 +386,8 @@ def do_init(args):
     global gside_X, gside_Y, overlay_image_rgba
     global pmsTable, pmsImageTable, pImages, device, spotPmsTable, spotOffPmsTable
     global drawer
+	global losses_history
+	losses_history = []
 
     # Do it (init that is)
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
