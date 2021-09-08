@@ -8,6 +8,7 @@ import subprocess
 import glob
 from braceexpand import braceexpand
 from types import SimpleNamespace
+from random import random
 
 import os.path
 
@@ -30,6 +31,8 @@ import kornia
 import kornia.augmentation as K
 import numpy as np
 import imageio
+
+import matplotlib.pyplot as plt
 
 from PIL import ImageFile, Image, PngImagePlugin
 ImageFile.LOAD_TRUNCATED_IMAGES = True
@@ -588,7 +591,8 @@ def do_init(args):
         pMs.append(Prompt(embed, weight).to(device))
 
     opts = drawer.get_opts()
-    scheduler = ExponentialLR(opts[0], gamma=args.gamma)
+    #scheduler = ExponentialLR(opts[0], gamma=args.gamma)
+    scheduler = optim.lr_scheduler.CosineAnnealingLR(opts[0], args.anneal_steps, verbose=False)
 
     if opts == None:
         # legacy
@@ -639,6 +643,7 @@ def do_init(args):
 
 
 # dreaded globals (for now)
+losses_history = []
 z_orig = None
 z_targets = None
 z_labels = None
@@ -814,8 +819,10 @@ def ascend_txt(args):
         elif args.enforce_smoothness_type=='log':
             sharpness = torch.log( torch.ones_like(sharpness)+sharpness )
         sharpness = torch.mean( sharpness )
+        if random() < 0.005:
+          print(f"ABC: {sharpness*min(150, cur_iteration)/args.enforce_smoothness}")
 
-        result.append( sharpness*cur_iteration/args.enforce_smoothness )
+        result.append( sharpness*min(150, cur_iteration)/args.enforce_smoothness )
 
     if args.enforce_saturation:
         # based on the old "percepted colourfulness" heuristic from Hasler and Süsstrunk’s 2003 paper
@@ -912,6 +919,7 @@ def re_average_z(args):
 # torch.autograd.set_detect_anomaly(True)
 
 def train(args, cur_it):
+    global scheduler;
     global drawer;
     for opt in opts:
         # opt.zero_grad(set_to_none=True)
@@ -919,9 +927,16 @@ def train(args, cur_it):
 
     for i in range(args.batches):
         lossAll = ascend_txt(args)
+        losses_history.append(lossAll)
 
         if i == 0 and cur_it % args.save_every == 0:
             checkin(args, cur_it, lossAll)
+            #print(opts[0].param_groups[0]['lr'])
+        
+        if i == 0 and cur_it % 100 == 0:
+          plt.plot(losses_history)
+          
+          plt.show()
 
         loss = sum(lossAll)
         loss.backward()
@@ -936,6 +951,9 @@ def train(args, cur_it):
     drawer.clip_z()    
 
     scheduler.step()
+
+    if cur_it % args.anneal_steps == 0:
+        scheduler = optim.lr_scheduler.CosineAnnealingLR(opts[0], args.anneal_steps, verbose=False)
 
 imagenet_templates = [
     "itap of a {}.",
@@ -1136,6 +1154,7 @@ def setup_parser():
     vq_parser.add_argument("-est",  "--enforce_smoothness_type", type=str, help="enforce smoothness type: default/clipped/log", default='default', dest='enforce_smoothness_type')
     vq_parser.add_argument("-ecw",  "--enforce_saturation", type=int, help="enforce saturation, 0 -- skip", default=0, dest='enforce_saturation')
     vq_parser.add_argument("-gam",  "--gamma", type=float, help="gamma", default=1.0, dest='gamma')
+    vq_parser.add_argument("-clrs",   "--anneal_steps", type=int, help="Cosine anneal epoch steps", default=50, dest='anneal_steps')
 
     return vq_parser
 
